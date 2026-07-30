@@ -15,6 +15,8 @@ import { GridScreen } from '@/components/GridScreen';
 import { CookieGame } from '@/components/CookieGame';
 import { StandardMathGame } from '@/components/StandardMathGame';
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [screen, setScreen] = useState<'profile' | 'home' | 'grid' | 'game'>('profile');
@@ -106,7 +108,10 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-slate-950 bg-[url('/math_bg.svg')] bg-cover bg-center bg-no-repeat bg-fixed text-slate-100 flex flex-col justify-between selection:bg-amber-500 overflow-x-hidden">
+    <div
+      className="relative min-h-screen w-full bg-slate-950 bg-cover bg-center bg-no-repeat bg-fixed text-slate-100 flex flex-col justify-between selection:bg-amber-500 overflow-x-hidden"
+      style={{ backgroundImage: `url('${basePath}/math_bg.svg')` }}
+    >
       <AnimatePresence mode="wait">
         {screen === 'profile' && (
           <motion.div

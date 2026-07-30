@@ -1,0 +1,6 @@
+{
+  "name": "Juego de Matemáticas Interactivo",
+  "description": "Juego educativo interactivo de matemáticas con reparto de galletas, fracciones y aventuras de aprendizaje.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

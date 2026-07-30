@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@layer base {
+  body {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+}
+
+.btn-touch {
+  min-height: 48px;
+  min-width: 48px;
+}

@@ -26,9 +26,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const operations: OperationType[] = ['addition', 'subtraction', 'multiplication', 'division'];
 
   return (
-    <div className="p-6 flex flex-col justify-between min-h-screen bg-slate-900 text-white max-w-xl mx-auto selection:bg-amber-500">
+    <div className="p-5 md:p-6 flex flex-col justify-between min-h-screen text-white max-w-xl mx-auto selection:bg-amber-500">
       {/* User Header */}
-      <div className="flex justify-between items-center bg-slate-800/80 backdrop-blur p-3 rounded-2xl border border-slate-700/80 shadow-md">
+      <div className="flex justify-between items-center bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700/80 shadow-lg">
         <button
           onClick={() => {
             sounds.playPop();
@@ -36,7 +36,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           }}
           className="flex items-center gap-3 hover:bg-slate-700/60 p-2 rounded-xl transition-colors"
         >
-          <span className="text-3xl bg-slate-700 p-2 rounded-xl border border-slate-600">{profile.avatar}</span>
+          <span className="text-3xl bg-slate-800 p-2 rounded-xl border border-slate-600 shadow-inner">{profile.avatar}</span>
           <div className="text-left">
             <h3 className="font-extrabold text-slate-100 text-base leading-tight">{profile.name}</h3>
             <p className="text-xs text-amber-400 font-bold">{profile.grade}.º Grado ⚙️</p>
@@ -44,7 +44,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </button>
 
         {/* Total Stars Badge */}
-        <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/40 px-3 py-1.5 rounded-xl">
+        <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/50 px-3.5 py-1.5 rounded-xl shadow-md">
           <Star className="w-5 h-5 text-amber-400 fill-amber-400 animate-pulse" />
           <span className="font-black text-amber-300 text-lg">{totalStars}</span>
         </div>
@@ -53,11 +53,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Main Content */}
       <div className="my-auto py-6 space-y-6">
         <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-md mb-2 shadow-sm">
             <Trophy className="w-3.5 h-3.5" />
             <span>Aventuras Matemáticas</span>
           </span>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-100">¿Qué aventura deseas iniciar hoy?</h2>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-100 drop-shadow-md">¿Qué aventura deseas iniciar hoy?</h2>
         </div>
 
         {/* Operations Grid */}
@@ -73,13 +73,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   sounds.playPop();
                   onSelectOperation(op);
                 }}
-                className={`btn-touch ${meta.bg} hover:brightness-110 text-white font-extrabold text-lg rounded-2xl p-4 flex justify-between items-center shadow-lg border border-white/20 transition-all`}
+                className={`btn-touch ${meta.bg} hover:brightness-110 text-white font-extrabold text-lg rounded-2xl p-4 flex justify-between items-center shadow-xl border border-white/20 transition-all`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">{meta.icon}</span>
-                  <span className="font-black text-xl">{meta.name}</span>
+                  <span className="text-3xl bg-black/20 p-2 rounded-xl backdrop-blur-sm">{meta.icon}</span>
+                  <span className="font-black text-xl tracking-wide">{meta.name}</span>
                 </div>
-                <div className="bg-white/20 p-2 rounded-xl backdrop-blur">
+                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
                   <ChevronRight className="w-6 h-6 text-white" />
                 </div>
               </motion.button>

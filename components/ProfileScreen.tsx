@@ -52,7 +52,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ initialProfile, on
   };
 
   return (
-    <div className="p-6 flex flex-col justify-between min-h-screen bg-slate-900 text-white max-w-xl mx-auto selection:bg-amber-500 overflow-hidden">
+    <div className="p-6 flex flex-col justify-between min-h-screen text-white max-w-xl mx-auto selection:bg-amber-500 overflow-hidden">
       {/* Wizard Header / Indicator */}
       <div className="pt-4">
         <div className="flex items-center justify-between mb-4">

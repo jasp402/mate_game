@@ -25,7 +25,7 @@ export const GridScreen: React.FC<GridScreenProps> = ({
   const completedStars = exercises.filter((e) => e.status === 'completed').length;
 
   return (
-    <div className="p-6 flex flex-col min-h-screen bg-slate-900 text-white max-w-xl mx-auto selection:bg-amber-500">
+    <div className="p-6 flex flex-col min-h-screen text-white max-w-xl mx-auto selection:bg-amber-500">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <button

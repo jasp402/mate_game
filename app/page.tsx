@@ -106,7 +106,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 flex flex-col justify-between selection:bg-amber-500 overflow-x-hidden">
+    <div className="relative min-h-screen w-full bg-slate-950 bg-[url('/math_bg.svg')] bg-cover bg-center bg-no-repeat bg-fixed text-slate-100 flex flex-col justify-between selection:bg-amber-500 overflow-x-hidden">
       <AnimatePresence mode="wait">
         {screen === 'profile' && (
           <motion.div

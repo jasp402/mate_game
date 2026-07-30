@@ -35,8 +35,12 @@ export interface CookieExerciseConfig {
 export interface StandardMathExercise {
   id: number;
   title: string;
+  isStory: boolean; // Odd = true (Story + characters + objects), Even = false (Direct numerical operation)
+  storyText?: string;
+  characterAvatar?: string;
+  characterName?: string;
   instruction: string;
-  itemType: 'apples' | 'stars' | 'candies' | 'blocks' | 'pizzas';
+  itemType: 'apples' | 'stars' | 'candies' | 'blocks' | 'pizzas' | 'toys';
   numA: number;
   numB: number;
   operator: '+' | '-' | '×' | '÷';
@@ -173,68 +177,278 @@ export const COOKIE_EXERCISES: CookieExerciseConfig[] = [
   },
 ];
 
-// Standard math exercises generator according to grade level & operation
+// Standard math exercises generator following strict 5-pair structure:
+// Odd (1, 3, 5, 7, 9) = Story, character & interactive objects
+// Even (2, 4, 6, 8, 10) = Direct math operation testing the concept with similar values
 export function getStandardExercises(op: OperationType, grade: number): StandardMathExercise[] {
-  const exercises: StandardMathExercise[] = [];
-  
-  for (let i = 1; i <= 10; i++) {
-    let numA = 0;
-    let numB = 0;
-    let operator: '+' | '-' | '×' | '÷' = '+';
-    let itemType: StandardMathExercise['itemType'] = 'apples';
+  // Base configuration per pair for each operation
+  let pairsConfig: {
+    storyText: string;
+    characterName: string;
+    characterAvatar: string;
+    itemType: StandardMathExercise['itemType'];
+    numA: number;
+    numB: number;
+    operator: '+' | '-' | '×' | '÷';
+  }[] = [];
 
-    if (op === 'addition') {
-      operator = '+';
-      itemType = i % 2 === 0 ? 'apples' : 'stars';
-      const max = grade === 1 ? 10 : grade === 2 ? 20 : 50;
-      numB = Math.floor(Math.random() * (max / 2)) + 1 + i;
-      numA = Math.floor(Math.random() * (max / 2)) + 2 + i;
-    } else if (op === 'subtraction') {
-      operator = '-';
-      itemType = i % 2 === 0 ? 'candies' : 'blocks';
-      const max = grade === 1 ? 10 : grade === 2 ? 20 : 40;
-      numB = Math.floor(Math.random() * (max / 2)) + 1;
-      numA = numB + Math.floor(Math.random() * (max / 2)) + 1;
-    } else if (op === 'multiplication') {
-      operator = '×';
-      itemType = 'stars';
-      const factorMax = grade <= 2 ? 5 : grade <= 4 ? 9 : 12;
-      numA = (i % factorMax) + 1;
-      numB = Math.floor(Math.random() * 5) + 2;
-    } else {
-      operator = '÷';
-      itemType = 'pizzas';
-      numB = (i % 4) + 2;
-      numA = numB * (Math.floor(Math.random() * 4) + 1);
-    }
+  const gradeMult = Math.max(1, grade <= 2 ? 1 : grade <= 4 ? 1.5 : 2);
+
+  if (op === 'subtraction') {
+    pairsConfig = [
+      {
+        storyText: 'Mateo tenía 5 bloques de construcción. Usa tu martillo 🔨 para romper 2 bloques. ¿Cuántos bloques enteros le quedan?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'blocks',
+        numA: Math.round(5 * gradeMult),
+        numB: Math.round(2 * gradeMult),
+        operator: '-',
+      },
+      {
+        storyText: 'Sofía compró 7 manzanas rojas y se comió 3 con sus amigos. ¿Cuántas manzanas le quedan?',
+        characterName: 'Sofía',
+        characterAvatar: '👧🏽',
+        itemType: 'apples',
+        numA: Math.round(7 * gradeMult),
+        numB: Math.round(3 * gradeMult),
+        operator: '-',
+      },
+      {
+        storyText: 'Lucas tenía 9 dulces en una bolsa y le regaló 4 a su hermana. ¿Cuántos dulces le quedan?',
+        characterName: 'Lucas',
+        characterAvatar: '👦🏽',
+        itemType: 'candies',
+        numA: Math.round(9 * gradeMult),
+        numB: Math.round(4 * gradeMult),
+        operator: '-',
+      },
+      {
+        storyText: 'Elena armó una estructura de 8 bloques. Con su martillo 🔨 derribó 5 bloques. ¿Cuántos bloques sanos quedan?',
+        characterName: 'Elena',
+        characterAvatar: '👧🏻',
+        itemType: 'blocks',
+        numA: Math.round(8 * gradeMult),
+        numB: Math.round(5 * gradeMult),
+        operator: '-',
+      },
+      {
+        storyText: 'Mateo tenía 10 galletas en la mesa y se comieron 6 en la merienda. ¿Cuántas galletas le quedan?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'toys',
+        numA: Math.round(10 * gradeMult),
+        numB: Math.round(6 * gradeMult),
+        operator: '-',
+      },
+    ];
+  } else if (op === 'addition') {
+    pairsConfig = [
+      {
+        storyText: 'Sofía tenía 4 manzanas y Mateo le regaló 3 manzanas más. ¿Cuántas manzanas tienen en total?',
+        characterName: 'Sofía',
+        characterAvatar: '👧🏽',
+        itemType: 'apples',
+        numA: Math.round(4 * gradeMult),
+        numB: Math.round(3 * gradeMult),
+        operator: '+',
+      },
+      {
+        storyText: 'Mateo recolectó 6 estrellas y luego consiguió 2 estrellas más. ¿Cuántas estrellas tiene ahora?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'stars',
+        numA: Math.round(6 * gradeMult),
+        numB: Math.round(2 * gradeMult),
+        operator: '+',
+      },
+      {
+        storyText: 'Lucas colocó 5 bloques y Elena agregó 4 bloques más arriba. ¿Cuántos bloques hay en total?',
+        characterName: 'Lucas',
+        characterAvatar: '👦🏽',
+        itemType: 'blocks',
+        numA: Math.round(5 * gradeMult),
+        numB: Math.round(4 * gradeMult),
+        operator: '+',
+      },
+      {
+        storyText: 'Elena tenía 8 dulces y su mamá le dio 3 dulces más. ¿Cuántos dulces tiene en total?',
+        characterName: 'Elena',
+        characterAvatar: '👧🏻',
+        itemType: 'candies',
+        numA: Math.round(8 * gradeMult),
+        numB: Math.round(3 * gradeMult),
+        operator: '+',
+      },
+      {
+        storyText: 'Mateo tenía 7 juguetes y su papá le regaló 5 juguetes más. ¿Cuántos juguetes tiene ahora?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'toys',
+        numA: Math.round(7 * gradeMult),
+        numB: Math.round(5 * gradeMult),
+        operator: '+',
+      },
+    ];
+  } else if (op === 'multiplication') {
+    pairsConfig = [
+      {
+        storyText: 'Sofía tiene 3 cajas y cada caja contiene 2 manzanas. ¿Cuántas manzanas hay en total?',
+        characterName: 'Sofía',
+        characterAvatar: '👧🏽',
+        itemType: 'apples',
+        numA: 3,
+        numB: 2,
+        operator: '×',
+      },
+      {
+        storyText: 'Mateo colocó 4 bolsas con 3 dulces en cada una. ¿Cuántos dulces hay en total?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'candies',
+        numA: 4,
+        numB: 3,
+        operator: '×',
+      },
+      {
+        storyText: 'Lucas organizó 2 filas con 5 bloques cada una. ¿Cuántos bloques hay en total?',
+        characterName: 'Lucas',
+        characterAvatar: '👦🏽',
+        itemType: 'blocks',
+        numA: 2,
+        numB: 5,
+        operator: '×',
+      },
+      {
+        storyText: 'Elena juntó 5 sobres con 4 estrellas en cada sobre. ¿Cuántas estrellas reunió?',
+        characterName: 'Elena',
+        characterAvatar: '👧🏻',
+        itemType: 'stars',
+        numA: 5,
+        numB: 4,
+        operator: '×',
+      },
+      {
+        storyText: 'Mateo tiene 3 platos con 6 galletas en cada plato. ¿Cuántas galletas hay en total?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'toys',
+        numA: 3,
+        numB: 6,
+        operator: '×',
+      },
+    ];
+  } else {
+    // Division
+    pairsConfig = [
+      {
+        storyText: 'Sofía tiene 6 pizzas para repartir equitativamente entre 2 amigos. ¿Cuántas pizzas le tocan a cada uno?',
+        characterName: 'Sofía',
+        characterAvatar: '👧🏽',
+        itemType: 'pizzas',
+        numA: 6,
+        numB: 2,
+        operator: '÷',
+      },
+      {
+        storyText: 'Mateo tiene 8 dulces para compartir por igual entre 4 compañeros. ¿Cuántos recibe cada uno?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'candies',
+        numA: 8,
+        numB: 4,
+        operator: '÷',
+      },
+      {
+        storyText: 'Lucas tiene 12 bloques y forma 3 grupos iguales. ¿Cuántos bloques tiene cada grupo?',
+        characterName: 'Lucas',
+        characterAvatar: '👦🏽',
+        itemType: 'blocks',
+        numA: 12,
+        numB: 3,
+        operator: '÷',
+      },
+      {
+        storyText: 'Elena tiene 10 manzanas para repartir por igual entre 2 amigos. ¿Cuántas le da a cada uno?',
+        characterName: 'Elena',
+        characterAvatar: '👧🏻',
+        itemType: 'apples',
+        numA: 10,
+        numB: 2,
+        operator: '÷',
+      },
+      {
+        storyText: 'Mateo guardó 15 estrellas repartidas por igual en 5 cajas. ¿Cuántas estrellas hay por caja?',
+        characterName: 'Mateo',
+        characterAvatar: '👦🏼',
+        itemType: 'stars',
+        numA: 15,
+        numB: 5,
+        operator: '÷',
+      },
+    ];
+  }
+
+  const exercises: StandardMathExercise[] = [];
+
+  // Generate 10 exercises organized in 5 pairs
+  for (let pairIndex = 0; pairIndex < 5; pairIndex++) {
+    const config = pairsConfig[pairIndex];
+    const numA = config.numA;
+    const numB = config.numB;
+    const operator = config.operator;
 
     let correct = 0;
     if (operator === '+') correct = numA + numB;
     if (operator === '-') correct = numA - numB;
     if (operator === '×') correct = numA * numB;
-    if (operator === '÷') correct = numA / numB;
+    if (operator === '÷') correct = Math.floor(numA / numB);
 
-    const wrong1 = correct + (i % 2 === 0 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
-    const wrong2 = correct + (i % 2 === 0 ? -2 : 2) * (Math.floor(Math.random() * 3) + 1);
-    
-    // Sort options uniquely
-    const optionsSet = new Set([correct, wrong1, wrong2]);
-    while (optionsSet.size < 3) {
-      optionsSet.add(correct + Math.floor(Math.random() * 10) - 5);
-    }
-    const options = Array.from(optionsSet).sort((a, b) => a - b);
+    // Options generator
+    const generateOptions = (ans: number) => {
+      const opts = new Set<number>([ans]);
+      opts.add(Math.max(0, ans + 1));
+      opts.add(Math.max(0, ans - 1));
+      if (opts.size < 3) opts.add(ans + 2);
+      if (opts.size < 3) opts.add(Math.max(0, ans - 2));
+      return Array.from(opts).sort((a, b) => a - b);
+    };
 
+    const options = generateOptions(correct);
+
+    // Ejercicio Impar (1, 3, 5, 7, 9): Historia + Objetos + Personaje
+    const oddId = pairIndex * 2 + 1;
     exercises.push({
-      id: i,
-      title: `Ejercicio ${i}`,
-      instruction: `Resuelve el problema visual contando los elementos o realizando la operación.`,
-      itemType,
+      id: oddId,
+      title: `Ejercicio ${oddId}: Historia con ${config.characterName}`,
+      isStory: true,
+      storyText: config.storyText,
+      characterName: config.characterName,
+      characterAvatar: config.characterAvatar,
+      instruction: `Lee la historia de ${config.characterName}, interactúa con los objetos y responde correctamente.`,
+      itemType: config.itemType,
       numA,
       numB,
       operator,
       options,
       correctAnswer: correct,
-      explanation: `${numA} ${operator} ${numB} es igual a ${correct}.`
+      explanation: `Tenías ${numA} ${operator === '-' ? 'objetos y quitaste' : operator === '+' ? 'objetos y agregaste' : 'objetos y dividiste/multiplicaste'} ${numB}. El resultado es ${correct}.`,
+    });
+
+    // Ejercicio Par (2, 4, 6, 8, 10): Operación Directa sin historia para comprobar comprensión
+    const evenId = pairIndex * 2 + 2;
+    exercises.push({
+      id: evenId,
+      title: `Ejercicio ${evenId}: Comprueba lo aprendido (${numA} ${operator} ${numB})`,
+      isStory: false,
+      instruction: `Demuestra lo aprendido resolviendo directamente la operación numérica: ${numA} ${operator} ${numB} = ?`,
+      itemType: config.itemType,
+      numA,
+      numB,
+      operator,
+      options,
+      correctAnswer: correct,
+      explanation: `${numA} ${operator} ${numB} es igual a ${correct}.`,
     });
   }
 

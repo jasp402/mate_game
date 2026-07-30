@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StandardMathExercise } from '@/lib/gameData';
 import { sounds } from '@/lib/sound';
-import { ArrowLeft, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, HelpCircle, CheckCircle2, RotateCcw, X } from 'lucide-react';
+import { SileoToast } from '@/components/SileoToast';
 
 interface StandardMathGameProps {
   exercise: StandardMathExercise;
@@ -18,6 +19,7 @@ const ITEM_EMOJIS = {
   candies: '🍬',
   blocks: '🧱',
   pizzas: '🍕',
+  toys: '🧸',
 };
 
 export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, onBack, onComplete }) => {
@@ -27,7 +29,10 @@ export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, on
   const [isSuccess, setIsSuccess] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
-  const emoji = ITEM_EMOJIS[exercise.itemType] || '⭐';
+  // Subtraction interactive hammer state (stores indices of broken blocks)
+  const [brokenIndices, setBrokenIndices] = useState<Set<number>>(new Set());
+
+  const emoji = ITEM_EMOJIS[exercise.itemType] || '🧱';
 
   const handleOptionSelect = (val: number) => {
     if (val === exercise.correctAnswer) {
@@ -43,7 +48,7 @@ export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, on
       if (nextFails >= 10) {
         setIsFallback(true);
       } else {
-        setFeedbackMsg('¡Casi! Cuenta bien los grupos de objetos e inténtalo de nuevo.');
+        setFeedbackMsg('¡Casi! Cuenta bien los objetos enteros e inténtalo de nuevo.');
       }
     }
   };
@@ -101,64 +106,182 @@ export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, on
       </AnimatePresence>
 
       {!isFallback ? (
-        <main className="flex-1 flex flex-col justify-around my-6 gap-6">
-          {feedbackMsg && (
-            <div className="bg-amber-500/20 border border-amber-400/50 text-amber-200 text-sm p-3 rounded-2xl text-center font-medium">
-              {feedbackMsg}
+        <main className="flex-1 flex flex-col justify-around my-4 gap-4">
+          <SileoToast
+            message={feedbackMsg}
+            onClose={() => setFeedbackMsg(null)}
+            type="warning"
+            durationMs={10000}
+          />
+
+          {/* Story Card for Odd Exercises (1, 3, 5, 7, 9) */}
+          {exercise.isStory && (
+            <div className="bg-gradient-to-r from-amber-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-amber-400/50 rounded-3xl p-4 md:p-5 shadow-lg flex items-start gap-3 md:gap-4">
+              <div className="text-4xl bg-slate-800/80 p-2.5 rounded-2xl border border-slate-700 shrink-0 shadow-md">
+                {exercise.characterAvatar || '👦🏼'}
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wider font-black text-amber-400 mb-1">
+                  Historia de {exercise.characterName}
+                </div>
+                <p className="text-base md:text-lg font-bold text-slate-100 leading-snug">
+                  {exercise.storyText}
+                </p>
+              </div>
             </div>
           )}
 
-          {/* Visual Equation Card */}
-          <div className="bg-slate-800/90 border-2 border-slate-700 rounded-3xl p-6 shadow-xl flex flex-col items-center">
-            <div className="text-3xl md:text-5xl font-black text-indigo-300 mb-6 tracking-wide flex items-center gap-4">
+          {/* Prominent Operation Card for All Exercises */}
+          <div className="bg-slate-800/90 border-2 border-indigo-500/60 rounded-3xl p-3.5 md:p-4 text-center shadow-lg">
+            <span className="text-xs font-black uppercase text-indigo-300 tracking-wider">
+              {exercise.isStory ? 'Operación Matemáticas' : 'Operación Directa (Comprobación de Concepto)'}
+            </span>
+            <div className="text-3xl md:text-4xl font-black text-amber-400 mt-1 flex items-center justify-center gap-3">
               <span>{exercise.numA}</span>
-              <span className="text-amber-400">{exercise.operator}</span>
+              <span className="text-amber-300">{exercise.operator}</span>
               <span>{exercise.numB}</span>
               <span className="text-slate-400">=</span>
-              <span className="text-amber-400">?</span>
-            </div>
-
-            {/* Visual Object Groups */}
-            <div className="flex flex-wrap items-center justify-center gap-6 w-full">
-              {/* Group A */}
-              <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 flex flex-wrap max-w-xs justify-center gap-2">
-                {Array.from({ length: exercise.numA }).map((_, idx) => (
-                  <motion.span
-                    whileHover={{ scale: 1.2 }}
-                    key={`a_${idx}`}
-                    className="text-3xl md:text-4xl"
-                  >
-                    {emoji}
-                  </motion.span>
-                ))}
-              </div>
-
-              <span className="text-3xl font-black text-amber-400">{exercise.operator}</span>
-
-              {/* Group B */}
-              <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 flex flex-wrap max-w-xs justify-center gap-2">
-                {Array.from({ length: exercise.numB }).map((_, idx) => (
-                  <motion.span
-                    whileHover={{ scale: 1.2 }}
-                    key={`b_${idx}`}
-                    className="text-3xl md:text-4xl"
-                  >
-                    {emoji}
-                  </motion.span>
-                ))}
-              </div>
+              <span className="text-amber-300">?</span>
             </div>
           </div>
 
+          {/* Zona de Resolución */}
+          {exercise.operator === '-' ? (
+            /* Subtraction Interactive Hammer Tool (Resta) */
+            <div className="bg-slate-800/90 border-2 border-slate-700 rounded-3xl p-4 md:p-5 shadow-xl flex flex-col items-center">
+              <div className="text-xs uppercase font-black tracking-widest text-emerald-400 mb-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                Zona de Resolución
+              </div>
+
+              <div className="flex items-center justify-between w-full mb-3 gap-2 flex-wrap">
+                <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-400/50 px-3 py-1.5 rounded-xl">
+                  <span className="text-xl">🔨</span>
+                  <span className="font-extrabold text-amber-300 text-xs md:text-sm">
+                    Herramienta Martillo Activa
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    sounds.playPop();
+                    setBrokenIndices(new Set());
+                  }}
+                  className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1 bg-slate-700/80 hover:bg-slate-700 px-3 py-1.5 rounded-xl transition-all border border-slate-600"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restaurar</span>
+                </button>
+              </div>
+
+              <p className="text-xs md:text-sm text-slate-200 mb-3 text-center font-semibold">
+                ¡Haz clic sobre los objetos para romperlos con el martillo (❌) y contar los que quedan intactos!
+              </p>
+
+              {/* Interactive Items Grid */}
+              <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3.5 max-w-md my-2">
+                {Array.from({ length: exercise.numA }).map((_, idx) => {
+                  const isBroken = brokenIndices.has(idx);
+                  return (
+                    <motion.button
+                      key={idx}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => {
+                        sounds.playPop();
+                        setBrokenIndices((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(idx)) {
+                            next.delete(idx);
+                          } else {
+                            next.add(idx);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`relative w-13 h-13 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-3xl md:text-4xl border-2 transition-all shadow-md ${
+                        isBroken
+                          ? 'bg-rose-950/70 border-rose-500/90 opacity-80 scale-95'
+                          : 'bg-slate-800 border-slate-600 hover:border-amber-400 hover:bg-slate-700'
+                      }`}
+                    >
+                      <span>{emoji}</span>
+                      {isBroken && (
+                        <motion.div
+                          initial={{ scale: 0, rotate: -45 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          className="absolute inset-0 flex items-center justify-center bg-rose-950/70 rounded-2xl border-2 border-rose-500"
+                        >
+                          <X className="w-8 h-8 md:w-10 md:h-10 text-rose-400 stroke-[3.5]" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Counting Stats Bar */}
+              <div className="mt-3 flex flex-wrap justify-center gap-2 md:gap-4 text-xs md:text-sm font-extrabold w-full pt-3 border-t border-slate-700/80">
+                <div className="bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300">
+                  Iniciales: <span className="text-white">{exercise.numA}</span>
+                </div>
+                <div className="bg-rose-950/50 px-3 py-1.5 rounded-xl border border-rose-800/80 text-rose-300">
+                  Rotos (🔨): <span className="text-rose-200">{brokenIndices.size}</span>
+                </div>
+                <div className="bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-800/80 text-emerald-300">
+                  Intactos: <span className="text-emerald-200">{exercise.numA - brokenIndices.size}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Visual Equation Card for Addition, Multiplication, Division */
+            <div className="bg-slate-800/90 border-2 border-slate-700 rounded-3xl p-5 shadow-xl flex flex-col items-center">
+              <div className="text-xs uppercase font-black tracking-widest text-emerald-400 mb-3 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                Zona de Resolución
+              </div>
+
+              {/* Visual Object Groups */}
+              <div className="flex flex-wrap items-center justify-center gap-4 w-full">
+                {/* Group A */}
+                <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-wrap max-w-xs justify-center gap-2">
+                  {Array.from({ length: exercise.numA }).map((_, idx) => (
+                    <motion.span
+                      whileHover={{ scale: 1.2 }}
+                      key={`a_${idx}`}
+                      className="text-3xl md:text-4xl"
+                    >
+                      {emoji}
+                    </motion.span>
+                  ))}
+                </div>
+
+                <span className="text-3xl font-black text-amber-400">{exercise.operator}</span>
+
+                {/* Group B */}
+                <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-wrap max-w-xs justify-center gap-2">
+                  {Array.from({ length: exercise.numB }).map((_, idx) => (
+                    <motion.span
+                      whileHover={{ scale: 1.2 }}
+                      key={`b_${idx}`}
+                      className="text-3xl md:text-4xl"
+                    >
+                      {emoji}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Options */}
-          <div className="bg-slate-800/60 p-5 rounded-3xl border border-slate-700/80 text-center">
-            <p className="font-bold text-slate-200 mb-4 text-lg">¿Cuál es el resultado correcto?</p>
-            <div className="grid grid-cols-3 gap-4">
+          <div className="bg-slate-800/60 p-4 md:p-5 rounded-3xl border border-slate-700/80 text-center">
+            <p className="font-extrabold text-slate-100 mb-3 text-base md:text-lg">
+              ¿Cuál es la respuesta correcta?
+            </p>
+            <div className="grid grid-cols-3 gap-3 md:gap-4">
               {exercise.options.map((opt) => (
                 <button
                   key={opt}
                   onClick={() => handleOptionSelect(opt)}
-                  className="btn-touch bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-2xl py-4 rounded-2xl shadow-lg active:scale-95 transition-all"
+                  className="btn-touch bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-2xl md:text-3xl py-3.5 md:py-4 rounded-2xl shadow-lg active:scale-95 transition-all"
                 >
                   {opt}
                 </button>
@@ -174,8 +297,8 @@ export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, on
               className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center z-50 p-6 text-center"
             >
               <div className="text-7xl mb-4 animate-bounce">⭐</div>
-              <h2 className="text-3xl font-extrabold text-amber-400 mb-2">¡Correcto!</h2>
-              <p className="text-lg text-slate-200">¡Ganaste una estrella!</p>
+              <h2 className="text-3xl font-extrabold text-amber-400 mb-2">¡Excelente Trabajo!</h2>
+              <p className="text-lg text-slate-200">¡Lograste resolver la operación correctamente!</p>
             </motion.div>
           )}
         </main>

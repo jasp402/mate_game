@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CookieExerciseConfig } from '@/lib/gameData';
 import { sounds } from '@/lib/sound';
 import { ArrowLeft, HelpCircle, RotateCcw, Scissors, Hand, Sparkles, CheckCircle2 } from 'lucide-react';
+import { SileoToast } from '@/components/SileoToast';
 
 interface CookiePiece {
   id: string;
@@ -241,19 +242,12 @@ export const CookieGame: React.FC<CookieGameProps> = ({ exercise, onBack, onComp
 
       {!isFallback ? (
         <main className="flex-1 flex flex-col justify-around my-4 gap-4">
-          {/* Feedback message banner */}
-          <AnimatePresence>
-            {feedbackMsg && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="bg-amber-500/20 border border-amber-400/50 text-amber-200 text-sm p-3 rounded-2xl text-center font-medium"
-              >
-                {feedbackMsg}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <SileoToast
+            message={feedbackMsg}
+            onClose={() => setFeedbackMsg(null)}
+            type="warning"
+            durationMs={10000}
+          />
 
           {/* Toolbar */}
           <div className="flex flex-wrap justify-center gap-2 bg-slate-800/80 backdrop-blur p-2 rounded-2xl border border-slate-700">

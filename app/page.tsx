@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Profile,
@@ -16,51 +16,39 @@ import { CookieGame } from '@/components/CookieGame';
 import { StandardMathGame } from '@/components/StandardMathGame';
 
 export default function App() {
-  const [profile, setProfile] = useState<Profile | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('math_profile');
-        return saved ? JSON.parse(saved) : null;
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  });
-
-  const [screen, setScreen] = useState<'profile' | 'home' | 'grid' | 'game'>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return localStorage.getItem('math_profile') ? 'home' : 'profile';
-      } catch {
-        return 'profile';
-      }
-    }
-    return 'profile';
-  });
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [screen, setScreen] = useState<'profile' | 'home' | 'grid' | 'game'>('profile');
 
   const [activeOp, setActiveOp] = useState<OperationType>('division');
   const [activeExId, setActiveExId] = useState<number>(1);
 
   // Exercise state per operation
-  const [exercisesMap, setExercisesMap] = useState<Record<OperationType, ExerciseProgress[]>>(() => {
-    const defaultData = {
-      addition: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
-      subtraction: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
-      multiplication: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
-      division: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
-    };
+  const [exercisesMap, setExercisesMap] = useState<Record<OperationType, ExerciseProgress[]>>(() => ({
+    addition: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
+    subtraction: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
+    multiplication: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
+    division: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, status: i === 0 ? ('available' as const) : ('locked' as const), failedAttempts: 0 })),
+  }));
 
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('math_exercises_v2');
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // Fallback
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem('math_profile');
+      const savedExercises = localStorage.getItem('math_exercises_v2');
+      if (savedProfile || savedExercises) {
+        queueMicrotask(() => {
+          if (savedProfile) {
+            setProfile(JSON.parse(savedProfile));
+            setScreen('home');
+          }
+          if (savedExercises) {
+            setExercisesMap(JSON.parse(savedExercises));
+          }
+        });
       }
+    } catch {
+      // Fallback
     }
-    return defaultData;
-  });
+  }, []);
 
   // Sync exercises to localStorage
   const updateExercisesMap = (newMap: Record<OperationType, ExerciseProgress[]>) => {
@@ -195,6 +183,7 @@ export default function App() {
               />
             ) : (
               <StandardMathGame
+                key={`${activeOp}_${activeExId}`}
                 exercise={
                   getStandardExercises(activeOp, profile.grade)[
                     (activeExId - 1) % 10

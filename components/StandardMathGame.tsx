@@ -31,8 +31,41 @@ export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, on
 
   // Subtraction interactive hammer state (stores indices of broken blocks)
   const [brokenIndices, setBrokenIndices] = useState<Set<number>>(new Set());
+  const [boxRows, setBoxRows] = useState<number[]>([]);
 
   const emoji = ITEM_EMOJIS[exercise.itemType] || '🧱';
+  const multiplicationTotal = exercise.numA * exercise.numB;
+  const placedApples = boxRows.reduce((total, filledSlots) => total + filledSlots, 0);
+  const hasEmptyAppleSlot = boxRows.some((filledSlots) => filledSlots < exercise.numB);
+
+  const addBoxRow = () => {
+    if (boxRows.length >= exercise.numA) {
+      setFeedbackMsg(`Ya creaste las ${exercise.numA} cajas.`);
+      return;
+    }
+
+    sounds.playPop();
+    setBoxRows((prev) => [...prev, 0]);
+  };
+
+  const fillNextAppleSlot = () => {
+    const rowIndex = boxRows.findIndex((filledSlots) => filledSlots < exercise.numB);
+
+    if (rowIndex === -1) {
+      setFeedbackMsg(boxRows.length === 0 ? 'Primero toca la caja para crear una fila.' : 'Todos los espacios ya están llenos.');
+      return;
+    }
+
+    sounds.playPop();
+    setBoxRows((prev) =>
+      prev.map((filledSlots, index) => (index === rowIndex ? filledSlots + 1 : filledSlots)),
+    );
+  };
+
+  const resetMultiplicationRows = () => {
+    sounds.playPop();
+    setBoxRows([]);
+  };
 
   const handleOptionSelect = (val: number) => {
     if (val === exercise.correctAnswer) {
@@ -229,6 +262,132 @@ export const StandardMathGame: React.FC<StandardMathGameProps> = ({ exercise, on
                 <div className="bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-800/80 text-emerald-300">
                   Intactos: <span className="text-emerald-200">{exercise.numA - brokenIndices.size}</span>
                 </div>
+              </div>
+            </div>
+          ) : exercise.operator === '×' ? (
+            <div className="bg-slate-800/90 border-2 border-slate-700 rounded-3xl p-4 md:p-5 shadow-xl flex flex-col items-center">
+              <div className="text-xs uppercase font-black tracking-widest text-emerald-400 mb-4 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                Zona de Resolución
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                <button
+                  onClick={addBoxRow}
+                  disabled={boxRows.length >= exercise.numA}
+                  className="btn-touch bg-emerald-950/70 hover:bg-emerald-900 disabled:opacity-60 border-2 border-emerald-500/70 rounded-3xl p-4 flex flex-col items-center justify-center gap-2 transition-all"
+                >
+                  <span className="text-5xl" aria-hidden="true">📦</span>
+                  <span className="font-black text-lg text-emerald-100">Caja</span>
+                </button>
+
+                <button
+                  draggable={hasEmptyAppleSlot}
+                  onClick={fillNextAppleSlot}
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('text/plain', 'apple');
+                    event.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  className="btn-touch bg-sky-950/70 hover:bg-sky-900 border-2 border-sky-500/70 rounded-3xl p-4 flex flex-col items-center justify-center gap-2 transition-all"
+                >
+                  <span className="text-5xl drop-shadow-md" aria-hidden="true">🍎</span>
+                  <span className="font-black text-lg text-sky-100">Manzana</span>
+                </button>
+              </div>
+
+              <div className="w-full max-w-lg mt-4 flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm font-extrabold">
+                  <div className="bg-emerald-950/60 border border-emerald-500/50 px-3 py-1.5 rounded-full text-emerald-100">
+                    Cajas: <span className="text-white">{boxRows.length}</span> / {exercise.numA}
+                  </div>
+                  <div className="bg-sky-950/60 border border-sky-500/50 px-3 py-1.5 rounded-full text-sky-100">
+                    Manzanas: <span className="text-white">{placedApples}</span> / {multiplicationTotal}
+                  </div>
+                  <button
+                    onClick={resetMultiplicationRows}
+                    className="bg-slate-700/80 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-full text-slate-200 flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reiniciar</span>
+                  </button>
+                </div>
+
+                <p className="text-sm md:text-base text-slate-200 text-center font-semibold">
+                  Toca la caja para crear una fila con {exercise.numB} espacios. Luego arrastra o toca manzanas para llenarlos.
+                </p>
+
+                <div className="space-y-3">
+                  {boxRows.length === 0 && (
+                    <div className="border-2 border-dashed border-slate-600 rounded-3xl p-5 text-center text-slate-400 font-bold">
+                      Toca <span className="text-emerald-300">Caja</span> para crear el primer grupo.
+                    </div>
+                  )}
+
+                  {boxRows.map((filledSlots, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-3">
+                      <div
+                        onDragOver={(event) => {
+                          if (filledSlots < exercise.numB) {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = 'copy';
+                          }
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          if (event.dataTransfer.getData('text/plain') === 'apple') {
+                            setBoxRows((prev) =>
+                              prev.map((slotCount, index) =>
+                                index === rowIndex && slotCount < exercise.numB ? slotCount + 1 : slotCount,
+                              ),
+                            );
+                            sounds.playPop();
+                          }
+                        }}
+                        className={`flex-1 rounded-2xl border-2 p-2.5 grid gap-2 transition-all ${
+                          filledSlots === exercise.numB
+                            ? 'bg-emerald-950/50 border-emerald-400/80'
+                            : 'bg-amber-950/40 border-amber-500/70'
+                        }`}
+                        style={{ gridTemplateColumns: `repeat(${exercise.numB}, minmax(0, 1fr))` }}
+                      >
+                        {Array.from({ length: exercise.numB }).map((_, slotIndex) => {
+                          const isFilled = slotIndex < filledSlots;
+                          return (
+                            <button
+                              key={slotIndex}
+                              onClick={() => {
+                                if (!isFilled) {
+                                  setBoxRows((prev) =>
+                                    prev.map((slotCount, index) =>
+                                      index === rowIndex && slotCount < exercise.numB ? slotCount + 1 : slotCount,
+                                    ),
+                                  );
+                                  sounds.playPop();
+                                }
+                              }}
+                              className={`aspect-[1.35] min-h-12 rounded-xl border-2 border-dashed flex items-center justify-center text-3xl transition-all ${
+                                isFilled
+                                  ? 'bg-slate-900/50 border-amber-300/70'
+                                  : 'bg-slate-950/40 border-amber-200/40 hover:border-sky-300'
+                              }`}
+                            >
+                              {isFilled ? '🍎' : ''}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="w-9 h-9 rounded-full border-2 border-emerald-400 text-emerald-200 flex items-center justify-center font-black">
+                        {rowIndex + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {boxRows.length === exercise.numA && placedApples === multiplicationTotal && (
+                  <div className="bg-emerald-500/15 border border-emerald-400/60 rounded-2xl px-4 py-3 text-center font-black text-emerald-100">
+                    {exercise.numA} cajas x {exercise.numB} manzanas = {multiplicationTotal}
+                  </div>
+                )}
               </div>
             </div>
           ) : (

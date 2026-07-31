@@ -391,6 +391,48 @@ export function getStandardExercises(op: OperationType, grade: number): Standard
 
   const exercises: StandardMathExercise[] = [];
 
+  const calculateCorrect = (numA: number, numB: number, operator: '+' | '-' | '×' | '÷') => {
+    if (operator === '+') return numA + numB;
+    if (operator === '-') return numA - numB;
+    if (operator === '×') return numA * numB;
+    return Math.floor(numA / numB);
+  };
+
+  const generateOptions = (ans: number) => {
+    const opts = new Set<number>([ans]);
+    opts.add(Math.max(0, ans + 1));
+    opts.add(Math.max(0, ans - 1));
+    if (opts.size < 3) opts.add(ans + 2);
+    if (opts.size < 3) opts.add(Math.max(0, ans - 2));
+    return Array.from(opts).sort((a, b) => a - b);
+  };
+
+  const createCheckVariant = (numA: number, numB: number, operator: '+' | '-' | '×' | '÷', pairIndex: number) => {
+    if (operator === '+') {
+      return {
+        numA: numA + (pairIndex % 2 === 0 ? 1 : 2),
+        numB: Math.max(1, numB + (pairIndex % 2 === 0 ? 1 : -1)),
+      };
+    }
+
+    if (operator === '-') {
+      const checkNumA = numA + (pairIndex % 2 === 0 ? 1 : 2);
+      const checkNumB = Math.max(1, Math.min(checkNumA - 1, numB + (pairIndex % 2 === 0 ? 1 : -1)));
+      return { numA: checkNumA, numB: checkNumB };
+    }
+
+    if (operator === '×') {
+      return {
+        numA: numA + (pairIndex % 2 === 0 ? 1 : 0),
+        numB: numB + (pairIndex % 2 === 0 ? 0 : 1),
+      };
+    }
+
+    const checkNumB = numB;
+    const quotient = Math.max(1, Math.floor(numA / numB) + (pairIndex % 2 === 0 ? 1 : 2));
+    return { numA: checkNumB * quotient, numB: checkNumB };
+  };
+
   // Generate 10 exercises organized in 5 pairs
   for (let pairIndex = 0; pairIndex < 5; pairIndex++) {
     const config = pairsConfig[pairIndex];
@@ -398,23 +440,11 @@ export function getStandardExercises(op: OperationType, grade: number): Standard
     const numB = config.numB;
     const operator = config.operator;
 
-    let correct = 0;
-    if (operator === '+') correct = numA + numB;
-    if (operator === '-') correct = numA - numB;
-    if (operator === '×') correct = numA * numB;
-    if (operator === '÷') correct = Math.floor(numA / numB);
-
-    // Options generator
-    const generateOptions = (ans: number) => {
-      const opts = new Set<number>([ans]);
-      opts.add(Math.max(0, ans + 1));
-      opts.add(Math.max(0, ans - 1));
-      if (opts.size < 3) opts.add(ans + 2);
-      if (opts.size < 3) opts.add(Math.max(0, ans - 2));
-      return Array.from(opts).sort((a, b) => a - b);
-    };
-
+    const correct = calculateCorrect(numA, numB, operator);
     const options = generateOptions(correct);
+    const checkVariant = createCheckVariant(numA, numB, operator, pairIndex);
+    const checkCorrect = calculateCorrect(checkVariant.numA, checkVariant.numB, operator);
+    const checkOptions = generateOptions(checkCorrect);
 
     // Ejercicio Impar (1, 3, 5, 7, 9): Historia + Objetos + Personaje
     const oddId = pairIndex * 2 + 1;
@@ -439,16 +469,16 @@ export function getStandardExercises(op: OperationType, grade: number): Standard
     const evenId = pairIndex * 2 + 2;
     exercises.push({
       id: evenId,
-      title: `Ejercicio ${evenId}: Comprueba lo aprendido (${numA} ${operator} ${numB})`,
+      title: `Ejercicio ${evenId}: Comprueba lo aprendido (${checkVariant.numA} ${operator} ${checkVariant.numB})`,
       isStory: false,
-      instruction: `Demuestra lo aprendido resolviendo directamente la operación numérica: ${numA} ${operator} ${numB} = ?`,
+      instruction: `Demuestra lo aprendido resolviendo directamente la operación numérica: ${checkVariant.numA} ${operator} ${checkVariant.numB} = ?`,
       itemType: config.itemType,
-      numA,
-      numB,
+      numA: checkVariant.numA,
+      numB: checkVariant.numB,
       operator,
-      options,
-      correctAnswer: correct,
-      explanation: `${numA} ${operator} ${numB} es igual a ${correct}.`,
+      options: checkOptions,
+      correctAnswer: checkCorrect,
+      explanation: `${checkVariant.numA} ${operator} ${checkVariant.numB} es igual a ${checkCorrect}.`,
     });
   }
 

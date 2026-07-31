@@ -52,6 +52,14 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register(`${basePath}/sw.js`, { scope: `${basePath}/` }).catch(() => {
+        // Installation can continue without offline support.
+      });
+    }
+  }, []);
+
   // Sync exercises to localStorage
   const updateExercisesMap = (newMap: Record<OperationType, ExerciseProgress[]>) => {
     setExercisesMap(newMap);

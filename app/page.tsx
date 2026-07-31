@@ -110,7 +110,7 @@ export default function App() {
   return (
     <div
       className="relative min-h-screen w-full bg-slate-950 bg-cover bg-center bg-no-repeat bg-fixed text-slate-100 flex flex-col justify-between selection:bg-amber-500 overflow-x-hidden"
-      style={{ backgroundImage: `url('${basePath}/math_bg.svg')` }}
+      style={{ backgroundImage: `url('${basePath}/math_adventures_bg.png')` }}
     >
       <AnimatePresence mode="wait">
         {screen === 'profile' && (
